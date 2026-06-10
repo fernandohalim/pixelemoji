@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { AboutModal } from "@/components/AboutModal";
 
-// Grab the first full emoji (handles ZWJ/skin-tone sequences when supported)
 function getFirstEmoji(str: string): string {
   const trimmed = str.trim();
   if (!trimmed) return "";
@@ -15,10 +15,13 @@ function getFirstEmoji(str: string): string {
   return Array.from(trimmed)[0] ?? "";
 }
 
+const pixelFont = { fontFamily: "var(--font-press-start)" };
+
 export default function Home() {
   const [input, setInput] = useState("😀");
-  const [size, setSize] = useState(16); // N for an N×N square grid
+  const [size, setSize] = useState(16);
   const [pixels, setPixels] = useState<string[]>([]);
+  const [aboutOpen, setAboutOpen] = useState(false);
 
   useEffect(() => {
     const emoji = getFirstEmoji(input);
@@ -27,21 +30,59 @@ export default function Home() {
       return;
     }
 
-    const RES = 256; // working render resolution
-    const canvas = document.createElement("canvas");
-    canvas.width = RES;
-    canvas.height = RES;
-    const ctx = canvas.getContext("2d", { willReadFrequently: true });
-    if (!ctx) return;
+    const RES = 256;
+    const src = document.createElement("canvas");
+    src.width = RES;
+    src.height = RES;
+    const sctx = src.getContext("2d", { willReadFrequently: true });
+    if (!sctx) return;
 
-    ctx.clearRect(0, 0, RES, RES);
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.font = `${Math.floor(RES * 0.8)}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`;
-    ctx.fillText(emoji, RES / 2, RES / 2);
+    sctx.clearRect(0, 0, RES, RES);
+    sctx.textAlign = "center";
+    sctx.textBaseline = "middle";
+    sctx.font = `${Math.floor(RES * 0.8)}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`;
+    sctx.fillText(emoji, RES / 2, RES / 2);
 
-    const data = ctx.getImageData(0, 0, RES, RES).data;
-    const cell = RES / size;
+    const srcData = sctx.getImageData(0, 0, RES, RES).data;
+
+    let minX = RES,
+      minY = RES,
+      maxX = -1,
+      maxY = -1;
+    for (let y = 0; y < RES; y++) {
+      for (let x = 0; x < RES; x++) {
+        if (srcData[(y * RES + x) * 4 + 3] > 8) {
+          if (x < minX) minX = x;
+          if (x > maxX) maxX = x;
+          if (y < minY) minY = y;
+          if (y > maxY) maxY = y;
+        }
+      }
+    }
+    if (maxX < 0) {
+      setPixels([]);
+      return;
+    }
+
+    const bw = maxX - minX + 1;
+    const bh = maxY - minY + 1;
+    const side = Math.max(bw, bh);
+    const pad = Math.round(side * 0.06);
+    const T = side + pad * 2;
+
+    const cen = document.createElement("canvas");
+    cen.width = T;
+    cen.height = T;
+    const cctx = cen.getContext("2d", { willReadFrequently: true });
+    if (!cctx) return;
+
+    cctx.clearRect(0, 0, T, T);
+    const dx = pad + Math.floor((side - bw) / 2);
+    const dy = pad + Math.floor((side - bh) / 2);
+    cctx.drawImage(src, minX, minY, bw, bh, dx, dy, bw, bh);
+
+    const data = cctx.getImageData(0, 0, T, T).data;
+    const cell = T / size;
     const result: string[] = [];
 
     for (let gy = 0; gy < size; gy++) {
@@ -58,7 +99,7 @@ export default function Home() {
 
         for (let y = y0; y < y1; y++) {
           for (let x = x0; x < x1; x++) {
-            const idx = (y * RES + x) * 4;
+            const idx = (y * T + x) * 4;
             r += data[idx];
             g += data[idx + 1];
             b += data[idx + 2];
@@ -84,7 +125,7 @@ export default function Home() {
   function downloadPng() {
     if (pixels.length === 0) return;
 
-    const scale = Math.max(1, Math.round(512 / size)); // ~512px output, integer cells
+    const scale = Math.max(1, Math.round(512 / size));
     const out = size * scale;
     const canvas = document.createElement("canvas");
     canvas.width = out;
@@ -92,12 +133,11 @@ export default function Home() {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    // Canvas is transparent by default — never fill a background.
     ctx.clearRect(0, 0, out, out);
     for (let i = 0; i < pixels.length; i++) {
       const x = (i % size) * scale;
       const y = Math.floor(i / size) * scale;
-      ctx.fillStyle = pixels[i]; // rgba with original alpha -> transparency preserved
+      ctx.fillStyle = pixels[i];
       ctx.fillRect(x, y, scale, scale);
     }
 
@@ -108,60 +148,90 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen bg-neutral-950 text-neutral-100 flex flex-col items-center justify-center gap-8 p-6">
-      <header className="text-center">
-        <h1 className="text-3xl font-bold tracking-tight">PixelEmoji</h1>
-        <p className="text-neutral-400 text-sm mt-1">
-          Turn any emoji into pixel art
-        </p>
+    <main className="relative min-h-screen bg-neutral-950 text-neutral-100">
+      <div
+        className="pointer-events-none absolute inset-0 opacity-[0.04]"
+        style={{
+          backgroundImage:
+            "linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)",
+          backgroundSize: "24px 24px",
+        }}
+      />
+
+      <header className="relative z-10 flex items-center justify-end px-5 py-4">
+        <button
+          onClick={() => setAboutOpen(true)}
+          aria-label="About"
+          className="border-2 border-neutral-700 bg-neutral-900 px-3 py-2 text-xs text-neutral-300 transition hover:border-amber-300/60 hover:text-amber-300 active:scale-95"
+          style={pixelFont}
+        >
+          ?
+        </button>
       </header>
 
-      <div className="w-full max-w-xs flex flex-col gap-5">
-        <label className="flex flex-col gap-2">
-          <span className="text-sm text-neutral-400">Emoji</span>
-          <input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            maxLength={8}
-            className="rounded-lg bg-neutral-900 border border-neutral-700 px-3 py-2 text-2xl text-center outline-none focus:border-neutral-400"
-          />
-        </label>
+      <div className="relative z-10 flex flex-col items-center justify-center gap-8 px-6 pb-16 pt-2">
+        <div className="flex flex-col items-center text-center">
+          <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-xl border-2 border-amber-300 bg-neutral-950 shadow-[4px_4px_0_0_rgba(0,0,0,0.5)]">
+            <div className="h-9 w-9 bg-amber-300" />
+          </div>
+          <h1 className="text-2xl text-amber-300" style={pixelFont}>
+            PixelEmoji
+          </h1>
+          <p className="mt-4 text-lg text-neutral-400">
+            Turn any emoji into pixel art
+          </p>
+        </div>
 
-        <label className="flex flex-col gap-2">
-          <span className="text-sm text-neutral-400">
-            Grid size: {size} × {size}
-          </span>
-          <input
-            type="range"
-            min={4}
-            max={64}
-            value={size}
-            onChange={(e) => setSize(Number(e.target.value))}
-            className="accent-neutral-300"
-          />
-        </label>
+        <div className="flex w-full max-w-xs flex-col gap-5">
+          <label className="flex flex-col gap-2">
+            <span className="text-base text-neutral-400">Emoji</span>
+            <input
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              maxLength={8}
+              className="border-2 border-neutral-700 bg-neutral-900 px-3 py-2 text-center text-2xl outline-none focus:border-amber-300"
+            />
+          </label>
+
+          <label className="flex flex-col gap-2">
+            <span className="text-base text-neutral-400">
+              Grid size: {size} × {size}
+            </span>
+            <input
+              type="range"
+              min={4}
+              max={64}
+              value={size}
+              onChange={(e) => setSize(Number(e.target.value))}
+              className="accent-amber-300"
+            />
+          </label>
+        </div>
+
+        <div
+          className="grid border-2 border-neutral-800 bg-neutral-900 shadow-[6px_6px_0_0_rgba(0,0,0,0.5)]"
+          style={{
+            gridTemplateColumns: `repeat(${size}, 1fr)`,
+            width: 320,
+            height: 320,
+          }}
+        >
+          {pixels.map((color, i) => (
+            <div key={i} style={{ backgroundColor: color }} />
+          ))}
+        </div>
+
+        <button
+          onClick={downloadPng}
+          disabled={pixels.length === 0}
+          className="border-2 border-amber-300 bg-amber-300 px-5 py-2.5 text-xs font-bold text-neutral-900 shadow-[4px_4px_0_0_rgba(0,0,0,0.5)] transition hover:bg-amber-200 active:translate-x-[2px] active:translate-y-[2px] active:shadow-[2px_2px_0_0_rgba(0,0,0,0.5)] disabled:opacity-40 disabled:active:translate-x-0 disabled:active:translate-y-0"
+          style={pixelFont}
+        >
+          Download PNG
+        </button>
       </div>
 
-      <div
-        className="grid bg-neutral-900 border border-neutral-800 rounded-lg overflow-hidden"
-        style={{
-          gridTemplateColumns: `repeat(${size}, 1fr)`,
-          width: 320,
-          height: 320,
-        }}
-      >
-        {pixels.map((color, i) => (
-          <div key={i} style={{ backgroundColor: color }} />
-        ))}
-      </div>
-
-      <button
-        onClick={downloadPng}
-        disabled={pixels.length === 0}
-        className="rounded-lg bg-neutral-100 text-neutral-900 px-4 py-2 text-sm font-medium hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-      >
-        Download PNG
-      </button>
+      <AboutModal isOpen={aboutOpen} onClose={() => setAboutOpen(false)} />
     </main>
   );
 }
