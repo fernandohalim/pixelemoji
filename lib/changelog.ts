@@ -10,6 +10,17 @@ export type Release = {
 
 export const releases: Release[] = [
     {
+  version: "1.5",
+  date: "June 2026",
+  title: "Share your pixels",
+  badge: "feature",
+  features: [
+    "New SVG export writes one crisp rectangle per cell, so your art scales to any size with zero blur — great for printing large or dropping into a design tool",
+    "A Copy button puts the finished art straight on your clipboard as an image, so you can paste it into a chat or doc without touching the download folder",
+    "Both the SVG and the copied image respect your Grid and background toggles, same as the PNG",
+  ],
+},
+    {
   version: "1.4",
   date: "June 2026",
   title: "Cleaner blocks",
