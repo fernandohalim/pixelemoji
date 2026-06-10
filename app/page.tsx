@@ -22,6 +22,9 @@ export default function Home() {
   const [size, setSize] = useState(16);
   const [pixels, setPixels] = useState<string[]>([]);
   const [aboutOpen, setAboutOpen] = useState(false);
+  // add these two:
+  const [gridLines, setGridLines] = useState(false);
+  const [solidBg, setSolidBg] = useState(false);
 
   useEffect(() => {
     const emoji = getFirstEmoji(input);
@@ -134,6 +137,34 @@ export default function Home() {
     if (!ctx) return;
 
     ctx.clearRect(0, 0, out, out);
+
+    // v1.3: solid background fill
+    if (solidBg) {
+      ctx.fillStyle = "#171717";
+      ctx.fillRect(0, 0, out, out);
+    }
+
+    for (let i = 0; i < pixels.length; i++) {
+      const x = (i % size) * scale;
+      const y = Math.floor(i / size) * scale;
+      ctx.fillStyle = pixels[i];
+      ctx.fillRect(x, y, scale, scale);
+    }
+
+    // v1.3: grid lines
+    if (gridLines) {
+      ctx.strokeStyle = "rgba(255,255,255,0.12)";
+      ctx.lineWidth = Math.max(1, Math.round(scale * 0.06));
+      ctx.beginPath();
+      for (let i = 0; i <= size; i++) {
+        const p = i * scale;
+        ctx.moveTo(p, 0);
+        ctx.lineTo(p, out);
+        ctx.moveTo(0, p);
+        ctx.lineTo(out, p);
+      }
+      ctx.stroke();
+    }
     for (let i = 0; i < pixels.length; i++) {
       const x = (i % size) * scale;
       const y = Math.floor(i / size) * scale;
@@ -179,7 +210,7 @@ export default function Home() {
 
       <div className="relative z-10 flex flex-1 min-h-0 flex-col lg:flex-row items-center justify-center gap-6 lg:gap-20 px-6 py-6">
         {/* LEFT COLUMN */}
-        <div className="flex w-full flex-col items-center lg:items-start gap-5">
+        <div className="flex w-full max-w-[320px] flex-col items-center lg:items-start gap-5">
           <div className="flex flex-col items-center lg:items-start text-center lg:text-left">
             <div className="mb-4 h-20 w-20 hidden items-center justify-center rounded-xl border-2 border-amber-300 bg-neutral-950 shadow-[4px_4px_0_0_rgba(0,0,0,0.5)]">
               <div className="h-9 w-9 bg-amber-300" />
@@ -216,21 +247,68 @@ export default function Home() {
                 className="accent-amber-300"
               />
             </label>
+            {/* v1.3 toggles */}
+            <div className="flex w-full gap-3">
+              <button
+                onClick={() => setGridLines((v) => !v)}
+                aria-pressed={gridLines}
+                className={`flex-1 border-2 px-3 py-2 text-[8px] transition active:scale-95 ${
+                  gridLines
+                    ? "border-amber-300 bg-amber-300/10 text-amber-300"
+                    : "border-neutral-700 bg-neutral-900 text-neutral-400 hover:border-amber-300/40"
+                }`}
+                style={pixelFont}
+              >
+                Grid {gridLines ? "On" : "Off"}
+              </button>
+              <button
+                onClick={() => setSolidBg((v) => !v)}
+                aria-pressed={solidBg}
+                className={`flex-1 border-2 px-3 py-2 text-[8px] transition active:scale-95 ${
+                  solidBg
+                    ? "border-amber-300 bg-amber-300/10 text-amber-300"
+                    : "border-neutral-700 bg-neutral-900 text-neutral-400 hover:border-amber-300/40"
+                }`}
+                style={pixelFont}
+              >
+                BG {solidBg ? "Dark" : "Clear"}
+              </button>
+            </div>
           </div>
         </div>
 
         {/* RIGHT COLUMN */}
         <div className="flex flex-col items-center gap-4">
           <div
-            className="grid border-2 border-neutral-800 bg-neutral-900 shadow-[6px_6px_0_0_rgba(0,0,0,0.5)]"
+            className="grid border-2 border-neutral-800 shadow-[6px_6px_0_0_rgba(0,0,0,0.5)]"
             style={{
               gridTemplateColumns: `repeat(${size}, 1fr)`,
               width: 320,
               height: 320,
+              backgroundColor: solidBg ? "#171717" : "#0e0e0e",
+              ...(solidBg
+                ? null
+                : {
+                    backgroundImage:
+                      "linear-gradient(45deg,#1c1c1c 25%,transparent 25%),linear-gradient(-45deg,#1c1c1c 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#1c1c1c 75%),linear-gradient(-45deg,transparent 75%,#1c1c1c 75%)",
+                    backgroundSize: "16px 16px",
+                    backgroundPosition: "0 0,0 8px,8px -8px,-8px 0",
+                  }),
             }}
           >
             {pixels.map((color, i) => (
-              <div key={i} style={{ backgroundColor: color }} />
+              <div
+                key={i}
+                style={{
+                  backgroundColor: color,
+                  ...(gridLines
+                    ? {
+                        borderTop: "1px solid rgba(255,255,255,0.12)",
+                        borderLeft: "1px solid rgba(255,255,255,0.12)",
+                      }
+                    : undefined),
+                }}
+              />
             ))}
           </div>
 
