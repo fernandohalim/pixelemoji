@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { AboutModal } from "@/components/AboutModal";
 
 function getFirstEmoji(str: string): string {
@@ -14,22 +14,23 @@ function getFirstEmoji(str: string): string {
   }
   return Array.from(trimmed)[0] ?? "";
 }
-
 const pixelFont = { fontFamily: "var(--font-press-start)" };
 
 export default function Home() {
   const [input, setInput] = useState("😀");
   const [size, setSize] = useState(16);
-  const [pixels, setPixels] = useState<string[]>([]);
+  const [raw, setRaw] = useState<number[][]>([]);
   const [aboutOpen, setAboutOpen] = useState(false);
   // add these two:
   const [gridLines, setGridLines] = useState(false);
   const [solidBg, setSolidBg] = useState(false);
+  const [crisp, setCrisp] = useState(false); // #4
+  const [colorLevels, setColorLevels] = useState(8);
 
   useEffect(() => {
     const emoji = getFirstEmoji(input);
     if (!emoji) {
-      setPixels([]);
+      setRaw([]);
       return;
     }
 
@@ -63,7 +64,7 @@ export default function Home() {
       }
     }
     if (maxX < 0) {
-      setPixels([]);
+      setRaw([]);
       return;
     }
 
@@ -86,7 +87,7 @@ export default function Home() {
 
     const data = cctx.getImageData(0, 0, T, T).data;
     const cell = T / size;
-    const result: string[] = [];
+    const result: number[][] = [];
 
     for (let gy = 0; gy < size; gy++) {
       for (let gx = 0; gx < size; gx++) {
@@ -116,14 +117,35 @@ export default function Home() {
           b /= count;
           a /= count;
         }
-        result.push(
-          `rgba(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)}, ${(a / 255).toFixed(3)})`,
-        );
+        result.push([
+          Math.round(r),
+          Math.round(g),
+          Math.round(b),
+          Math.round(a),
+        ]);
       }
     }
 
-    setPixels(result);
+    setRaw(result);
   }, [input, size]);
+
+  const pixels = useMemo<string[]>(() => {
+    const step = colorLevels < 8 ? 255 / (colorLevels - 1) : 0;
+    return raw.map(([r, g, b, a]) => {
+      let alpha = a / 255;
+      if (crisp) alpha = alpha >= 0.5 ? 1 : 0; // #4: snap edges hard
+      let R = r,
+        G = g,
+        B = b;
+      if (step) {
+        // #2: posterize colors
+        R = Math.round(Math.round(r / step) * step);
+        G = Math.round(Math.round(g / step) * step);
+        B = Math.round(Math.round(b / step) * step);
+      }
+      return `rgba(${R}, ${G}, ${B}, ${alpha.toFixed(3)})`;
+    });
+  }, [raw, crisp, colorLevels]);
 
   function downloadPng() {
     if (pixels.length === 0) return;
@@ -164,12 +186,6 @@ export default function Home() {
         ctx.lineTo(out, p);
       }
       ctx.stroke();
-    }
-    for (let i = 0; i < pixels.length; i++) {
-      const x = (i % size) * scale;
-      const y = Math.floor(i / size) * scale;
-      ctx.fillStyle = pixels[i];
-      ctx.fillRect(x, y, scale, scale);
     }
 
     const link = document.createElement("a");
@@ -247,8 +263,23 @@ export default function Home() {
                 className="accent-amber-300"
               />
             </label>
+
+            <label className="flex flex-col gap-2">
+              <span className="text-base text-neutral-400">
+                Colors: {colorLevels === 8 ? "Full" : `≤ ${colorLevels ** 3}`}
+              </span>
+              <input
+                type="range"
+                min={2}
+                max={8}
+                value={colorLevels}
+                onChange={(e) => setColorLevels(Number(e.target.value))}
+                className="accent-amber-300"
+              />
+            </label>
+
             {/* v1.3 toggles */}
-            <div className="flex w-full gap-3">
+            <div className="grid w-full grid-cols-2 gap-3">
               <button
                 onClick={() => setGridLines((v) => !v)}
                 aria-pressed={gridLines}
@@ -272,6 +303,18 @@ export default function Home() {
                 style={pixelFont}
               >
                 BG {solidBg ? "Dark" : "Clear"}
+              </button>
+              <button
+                onClick={() => setCrisp((v) => !v)}
+                aria-pressed={crisp}
+                className={`col-span-2 border-2 px-3 py-2 text-[8px] transition active:scale-95 ${
+                  crisp
+                    ? "border-amber-300 bg-amber-300/10 text-amber-300"
+                    : "border-neutral-700 bg-neutral-900 text-neutral-400 hover:border-amber-300/40"
+                }`}
+                style={pixelFont}
+              >
+                Crisp {crisp ? "On" : "Off"}
               </button>
             </div>
           </div>

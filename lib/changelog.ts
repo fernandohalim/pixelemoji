@@ -9,6 +9,17 @@ export type Release = {
 };
 
 export const releases: Release[] = [
+    {
+  version: "1.4",
+  date: "June 2026",
+  title: "Cleaner blocks",
+  badge: "feature",
+  features: [
+    "New Colors slider quantizes the palette down toward a handful of flat tones, trading the sampler's dozens of near-identical shades for a chunkier, more genuinely retro look",
+    "A Crisp toggle snaps every faint edge cell to fully opaque or fully transparent, so the glyph's outline reads as hard blocks instead of a soft alpha haze",
+    "Both settings update the preview live and carry straight through to the PNG export",
+  ],
+},
         {
     version: "1.3.1",
     date: "June 2026",
