@@ -13,7 +13,7 @@ export const releases: Release[] = [
     version: "1.3.1",
     date: "June 2026",
     title: "Tidy up!",
-    badge: "feature",
+    badge: "patch",
     features: [
         "Tidied the layout so the controls column lines up with the preview, instead of the emoji input stretching across the page",
     ],
