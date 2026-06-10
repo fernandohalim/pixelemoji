@@ -43,3 +43,41 @@ body {
 .animate-pop-in {
   animation: pop-in 0.18s ease-out;
 }
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+}
+
+.scrollbar-pixel {
+  scrollbar-width: thin;
+  scrollbar-color: #fcd34d #171717;
+}
+
+.scrollbar-pixel::-webkit-scrollbar {
+  width: 10px;
+}
+
+.scrollbar-pixel::-webkit-scrollbar-track {
+  background-color: #171717;
+  background-image: repeating-linear-gradient(
+    180deg,
+    transparent 0px,
+    transparent 5px,
+    rgba(255, 255, 255, 0.03) 5px,
+    rgba(255, 255, 255, 0.03) 6px
+  );
+  border-left: 2px solid #262626;
+}
+
+.scrollbar-pixel::-webkit-scrollbar-thumb {
+  background: #fcd34d;
+  border-left: 2px solid #171717;
+  box-shadow:
+    inset -2px -2px 0 rgba(0, 0, 0, 0.3),
+    inset 2px 2px 0 rgba(255, 255, 255, 0.15);
+}
+
+.scrollbar-pixel::-webkit-scrollbar-thumb:hover {
+  background: #fde68a;
+}

@@ -130,7 +130,7 @@ export function AboutModal({ isOpen, onClose }: AboutModalProps) {
               </h2>
             </div>
 
-            <div className="flex flex-col gap-5 overflow-y-auto px-5 py-5">
+            <div className="scrollbar-pixel flex flex-col gap-5 overflow-y-auto px-5 py-5">
               {releases.map((r) => (
                 <div key={r.version} className="flex flex-col gap-2">
                   <div className="flex items-center gap-2">

@@ -148,7 +148,7 @@ export default function Home() {
   }
 
   return (
-    <main className="relative min-h-screen bg-neutral-950 text-neutral-100">
+    <main className="relative h-screen overflow-hidden bg-neutral-950 text-neutral-100 flex flex-col">
       <div
         className="pointer-events-none absolute inset-0 opacity-[0.04]"
         style={{
@@ -158,7 +158,15 @@ export default function Home() {
         }}
       />
 
-      <header className="relative z-10 flex items-center justify-end px-5 py-4">
+      <header className="relative z-10 flex items-center justify-between px-6 py-3 border-b border-neutral-800/50">
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-6 w-6 items-center justify-center border border-amber-300 bg-neutral-950">
+            <div className="h-2.5 w-2.5 bg-amber-300" />
+          </div>
+          <span className="text-xs text-amber-300" style={pixelFont}>
+            PixelEmoji
+          </span>
+        </div>
         <button
           onClick={() => setAboutOpen(true)}
           aria-label="About"
@@ -169,66 +177,72 @@ export default function Home() {
         </button>
       </header>
 
-      <div className="relative z-10 flex flex-col items-center justify-center gap-8 px-6 pb-16 pt-2">
-        <div className="flex flex-col items-center text-center">
-          <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-xl border-2 border-amber-300 bg-neutral-950 shadow-[4px_4px_0_0_rgba(0,0,0,0.5)]">
-            <div className="h-9 w-9 bg-amber-300" />
+      <div className="relative z-10 flex flex-1 min-h-0 flex-col lg:flex-row items-center justify-center gap-6 lg:gap-20 px-6 py-6">
+        {/* LEFT COLUMN */}
+        <div className="flex w-full flex-col items-center lg:items-start gap-5">
+          <div className="flex flex-col items-center lg:items-start text-center lg:text-left">
+            <div className="mb-4 h-20 w-20 hidden items-center justify-center rounded-xl border-2 border-amber-300 bg-neutral-950 shadow-[4px_4px_0_0_rgba(0,0,0,0.5)]">
+              <div className="h-9 w-9 bg-amber-300" />
+            </div>
+            <h1 className="text-2xl text-amber-300" style={pixelFont}>
+              PixelEmoji
+            </h1>
+            <p className="mt-1 text-lg text-neutral-400">
+              Turn any emoji into pixel art
+            </p>
           </div>
-          <h1 className="text-2xl text-amber-300" style={pixelFont}>
-            PixelEmoji
-          </h1>
-          <p className="mt-4 text-lg text-neutral-400">
-            Turn any emoji into pixel art
-          </p>
+
+          <div className="flex w-full flex-col gap-4">
+            <label className="flex flex-col gap-2">
+              <span className="text-base text-neutral-400">Emoji</span>
+              <input
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                maxLength={8}
+                className="border-2 border-neutral-700 bg-neutral-900 px-3 py-2 text-center text-2xl outline-none focus:border-amber-300"
+              />
+            </label>
+
+            <label className="flex flex-col gap-2">
+              <span className="text-base text-neutral-400">
+                Grid size: {size} × {size}
+              </span>
+              <input
+                type="range"
+                min={4}
+                max={64}
+                value={size}
+                onChange={(e) => setSize(Number(e.target.value))}
+                className="accent-amber-300"
+              />
+            </label>
+          </div>
         </div>
 
-        <div className="flex w-full max-w-xs flex-col gap-5">
-          <label className="flex flex-col gap-2">
-            <span className="text-base text-neutral-400">Emoji</span>
-            <input
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              maxLength={8}
-              className="border-2 border-neutral-700 bg-neutral-900 px-3 py-2 text-center text-2xl outline-none focus:border-amber-300"
-            />
-          </label>
+        {/* RIGHT COLUMN */}
+        <div className="flex flex-col items-center gap-4">
+          <div
+            className="grid border-2 border-neutral-800 bg-neutral-900 shadow-[6px_6px_0_0_rgba(0,0,0,0.5)]"
+            style={{
+              gridTemplateColumns: `repeat(${size}, 1fr)`,
+              width: 320,
+              height: 320,
+            }}
+          >
+            {pixels.map((color, i) => (
+              <div key={i} style={{ backgroundColor: color }} />
+            ))}
+          </div>
 
-          <label className="flex flex-col gap-2">
-            <span className="text-base text-neutral-400">
-              Grid size: {size} × {size}
-            </span>
-            <input
-              type="range"
-              min={4}
-              max={64}
-              value={size}
-              onChange={(e) => setSize(Number(e.target.value))}
-              className="accent-amber-300"
-            />
-          </label>
+          <button
+            onClick={downloadPng}
+            disabled={pixels.length === 0}
+            className="border-2 border-amber-300 bg-amber-300 px-5 py-2.5 text-xs font-bold text-neutral-900 shadow-[4px_4px_0_0_rgba(0,0,0,0.5)] transition hover:bg-amber-200 active:translate-x-0.5 active:translate-y-0.5 active:shadow-[2px_2px_0_0_rgba(0,0,0,0.5)] disabled:opacity-40 disabled:active:translate-x-0 disabled:active:translate-y-0"
+            style={pixelFont}
+          >
+            Download PNG
+          </button>
         </div>
-
-        <div
-          className="grid border-2 border-neutral-800 bg-neutral-900 shadow-[6px_6px_0_0_rgba(0,0,0,0.5)]"
-          style={{
-            gridTemplateColumns: `repeat(${size}, 1fr)`,
-            width: 320,
-            height: 320,
-          }}
-        >
-          {pixels.map((color, i) => (
-            <div key={i} style={{ backgroundColor: color }} />
-          ))}
-        </div>
-
-        <button
-          onClick={downloadPng}
-          disabled={pixels.length === 0}
-          className="border-2 border-amber-300 bg-amber-300 px-5 py-2.5 text-xs font-bold text-neutral-900 shadow-[4px_4px_0_0_rgba(0,0,0,0.5)] transition hover:bg-amber-200 active:translate-x-[2px] active:translate-y-[2px] active:shadow-[2px_2px_0_0_rgba(0,0,0,0.5)] disabled:opacity-40 disabled:active:translate-x-0 disabled:active:translate-y-0"
-          style={pixelFont}
-        >
-          Download PNG
-        </button>
       </div>
 
       <AboutModal isOpen={aboutOpen} onClose={() => setAboutOpen(false)} />

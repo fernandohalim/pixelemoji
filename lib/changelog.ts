@@ -9,6 +9,17 @@ export type Release = {
 };
 
 export const releases: Release[] = [
+    {
+    version: "1.3",
+    date: "June 2026",
+    title: "Your grid, your backdrop",
+    badge: "feature",
+    features: [
+        "A new Grid Lines toggle draws borders between every cell in the preview — makes it easy to count blocks and see exactly how each region of the glyph was sampled",
+        "Background toggle switches the canvas between transparent (the default) and a solid dark fill, so colors that would otherwise vanish against the interface are easier to judge",
+        "Both settings carry through to the PNG export — the preview is now a true preview",
+    ],
+    },
   {
     version: "1.2",
     date: "June 2026",
