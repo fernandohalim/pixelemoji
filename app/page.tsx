@@ -31,6 +31,7 @@ export default function Home() {
   const [gridLines, setGridLines] = useState(false);
   const [solidBg, setSolidBg] = useState(false);
   const [crisp, setCrisp] = useState(false); // #4
+  const [outline, setOutline] = useState(false); // #5
   const [colorLevels, setColorLevels] = useState(8);
   const [copied, setCopied] = useState(false);
 
@@ -140,8 +141,12 @@ export default function Home() {
   }, [input, size]);
 
   const pixels = useMemo<string[]>(() => {
+    if (raw.length === 0) return [];
+    const dim = Math.round(Math.sqrt(raw.length)) || 1;
     const step = colorLevels < 8 ? 255 / (colorLevels - 1) : 0;
-    return raw.map(([r, g, b, a]) => {
+
+    // pass 1: base color + resolved alpha per cell
+    const cells = raw.map(([r, g, b, a]) => {
       let alpha = a / 255;
       if (crisp) alpha = alpha >= 0.5 ? 1 : 0; // #4: snap edges hard
       let R = r,
@@ -153,9 +158,41 @@ export default function Home() {
         G = Math.round(Math.round(g / step) * step);
         B = Math.round(Math.round(b / step) * step);
       }
-      return `rgba(${R}, ${G}, ${B}, ${alpha.toFixed(3)})`;
+      return { R, G, B, alpha };
     });
-  }, [raw, crisp, colorLevels]);
+
+    // pass 2: #5 silhouette outline — empty cells touching a filled cell go black
+    let outlineMask: boolean[] | null = null;
+    if (outline) {
+      const FILLED = 0.5;
+      const filled = cells.map((c) => c.alpha >= FILLED);
+      outlineMask = new Array(cells.length).fill(false);
+      for (let i = 0; i < cells.length; i++) {
+        if (filled[i]) continue; // outline only sits on empty cells
+        const x = i % dim;
+        const y = Math.floor(i / dim);
+        let touches = false;
+        for (let dy = -1; dy <= 1 && !touches; dy++) {
+          for (let dx = -1; dx <= 1; dx++) {
+            if (dx === 0 && dy === 0) continue;
+            const nx = x + dx,
+              ny = y + dy;
+            if (nx < 0 || ny < 0 || nx >= dim || ny >= dim) continue; // clip at edge
+            if (filled[ny * dim + nx]) {
+              touches = true;
+              break;
+            }
+          }
+        }
+        outlineMask[i] = touches;
+      }
+    }
+
+    return cells.map((c, i) => {
+      if (outlineMask && outlineMask[i]) return "rgba(0, 0, 0, 1.000)";
+      return `rgba(${c.R}, ${c.G}, ${c.B}, ${c.alpha.toFixed(3)})`;
+    });
+  }, [raw, crisp, colorLevels, outline]);
 
   function drawCanvas(): HTMLCanvasElement | null {
     if (pixels.length === 0) return null;
@@ -381,16 +418,39 @@ export default function Home() {
                 BG {solidBg ? "Dark" : "Clear"}
               </button>
               <button
-                onClick={() => setCrisp((v) => !v)}
+                onClick={() => {
+                  if (!outline) setCrisp((v) => !v); // locked on while outline is on
+                }}
                 aria-pressed={crisp}
-                className={`col-span-2 border-2 px-3 py-2 text-[8px] transition active:scale-95 ${
+                aria-disabled={outline}
+                title={
+                  outline ? "Crisp stays on while Outline is on" : undefined
+                }
+                className={`flex-1 border-2 px-3 py-2 text-[8px] transition active:scale-95 ${
                   crisp
+                    ? "border-amber-300 bg-amber-300/10 text-amber-300"
+                    : "border-neutral-700 bg-neutral-900 text-neutral-400 hover:border-amber-300/40"
+                } ${outline ? "cursor-not-allowed opacity-80 active:scale-100" : ""}`}
+                style={pixelFont}
+              >
+                Crisp {crisp ? "On" : "Off"}
+                {outline ? " 🔒" : ""}
+              </button>
+              <button
+                onClick={() => {
+                  const next = !outline;
+                  setOutline(next);
+                  if (next) setCrisp(true);
+                }}
+                aria-pressed={outline}
+                className={`flex-1 border-2 px-3 py-2 text-[8px] transition active:scale-95 ${
+                  outline
                     ? "border-amber-300 bg-amber-300/10 text-amber-300"
                     : "border-neutral-700 bg-neutral-900 text-neutral-400 hover:border-amber-300/40"
                 }`}
                 style={pixelFont}
               >
-                Crisp {crisp ? "On" : "Off"}
+                Outline {outline ? "On" : "Off"}
               </button>
             </div>
           </div>

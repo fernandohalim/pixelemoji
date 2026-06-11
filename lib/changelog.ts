@@ -9,6 +9,18 @@ export type Release = {
 };
 
 export const releases: Release[] = [
+  {
+  version: "1.6",
+  date: "June 2026",
+  title: "Make it pop",
+  badge: "feature",
+features: [
+  "New Outline toggle traces a black border around the emoji's silhouette, so the art reads as a clean sprite against any background",
+  "Outline automatically switches Crisp on and keeps it locked there — the outline needs hard edges to read as solid blocks",
+  "The outline hugs the solid shape and clips gracefully at the grid's edge",
+  "Carries through everywhere — preview, PNG, SVG, and Copy all include the outline",
+],
+},
     {
   version: "1.5.1",
   date: "June 2026",
