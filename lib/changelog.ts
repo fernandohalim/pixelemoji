@@ -10,6 +10,15 @@ export type Release = {
 
 export const releases: Release[] = [
     {
+  version: "1.6",
+  date: "June 2026",
+  title: "Fits any screen",
+  badge: "patch",
+  features: [
+    "Reworked the page so it scrolls gracefully on short screens instead of clipping the preview and buttons off the bottom",
+  ],
+},
+    {
   version: "1.5",
   date: "June 2026",
   title: "Share your pixels",

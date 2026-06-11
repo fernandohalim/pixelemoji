@@ -1,6 +1,6 @@
 {
   "name": "pixelemoji",
-  "version": "1.5",
+  "version": "1.5.1",
   "private": true,
   "scripts": {
     "dev": "next dev",

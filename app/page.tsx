@@ -271,7 +271,7 @@ export default function Home() {
   }
 
   return (
-    <main className="relative h-screen overflow-hidden bg-neutral-950 text-neutral-100 flex flex-col">
+    <main className="relative min-h-dvh bg-neutral-950 text-neutral-100 flex flex-col">
       <div
         className="pointer-events-none absolute inset-0 opacity-[0.04]"
         style={{
@@ -300,7 +300,7 @@ export default function Home() {
         </button>
       </header>
 
-      <div className="relative z-10 flex flex-1 min-h-0 flex-col lg:flex-row items-center justify-center gap-6 lg:gap-20 px-6 py-6">
+      <div className="relative z-10 flex flex-1 flex-col lg:flex-row items-center justify-center gap-6 lg:gap-20 px-6 py-6">
         {/* LEFT COLUMN */}
         <div className="flex w-full max-w-[320px] flex-col items-center lg:items-start gap-5">
           <div className="flex flex-col items-center lg:items-start text-center lg:text-left">
